@@ -42,11 +42,15 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/");
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
   }, [status, router]);
 
   useEffect(() => {
-    if (status === "authenticated") fetchRepos();
+    if (status === "authenticated") {
+      fetchRepos();
+    }
   }, [status]);
 
   async function fetchRepos() {
@@ -56,7 +60,9 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setRepos(data.repos || []);
-        if (data.repos?.length > 0) setSelectedRepo(data.repos[0].full_name);
+        if (data.repos?.length > 0) {
+          setSelectedRepo(data.repos[0].full_name);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -70,16 +76,30 @@ export default function DashboardPage() {
     setGenerating(true);
     setError(null);
     setResult(null);
+
     const [owner, repo] = selectedRepo.split("/");
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ owner, repo, since, until }),
       });
+
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Failed to generate changelog"); return; }
-      setResult({ developer: data.developer, user: data.user, executive: data.executive, commits_used: data.commits_used, prs_used: data.prs_used });
+
+      if (!res.ok) {
+        setError(data.error || "Failed to generate changelog");
+        return;
+      }
+
+      setResult({
+        developer: data.developer,
+        user: data.user,
+        executive: data.executive,
+        commits_used: data.commits_used,
+        prs_used: data.prs_used,
+      });
       setActiveTab("developer");
     } catch (e: any) {
       setError(e.message || "Network error");
@@ -90,14 +110,16 @@ export default function DashboardPage() {
 
   async function copyToClipboard() {
     if (!result) return;
-    await navigator.clipboard.writeText(result[activeTab]);
+    const text = result[activeTab];
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function downloadMarkdown() {
     if (!result) return;
-    const blob = new Blob([result[activeTab]], { type: "text/markdown" });
+    const text = result[activeTab];
+    const blob = new Blob([text], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -116,25 +138,41 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-[#f0f0f0]">
+      {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e1e] max-w-6xl mx-auto">
         <span className="font-bold text-xl tracking-tight">
-          <span className="bg-gradient-to-r from-[#7c8cf8] to-[#a78bfa] bg-clip-text text-transparent">Proseflow</span>
+          <span className="bg-gradient-to-r from-[#7c8cf8] to-[#a78bfa] bg-clip-text text-transparent">
+            Proseflow
+          </span>
         </span>
         <div className="flex items-center gap-4">
           {session?.user?.image && (
-            <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border border-[#333]" />
+            <img
+              src={session.user.image}
+              alt="avatar"
+              className="w-8 h-8 rounded-full border border-[#333]"
+            />
           )}
           <span className="text-sm text-[#888]">{session?.user?.name}</span>
-          <a href="/api/auth/signout" className="text-sm text-[#555] hover:text-[#888] transition-colors">Sign out</a>
+          <a
+            href="/api/auth/signout"
+            className="text-sm text-[#555] hover:text-[#888] transition-colors"
+          >
+            Sign out
+          </a>
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold mb-2">Generate Changelog</h1>
-        <p className="text-[#666] mb-8">Select a repo and date range to generate release notes in 3 tones.</p>
+        <p className="text-[#666] mb-8">
+          Select a repo and date range to generate release notes in 3 tones.
+        </p>
 
+        {/* Form */}
         <div className="bg-[#111] border border-[#222] rounded-xl p-6 mb-8">
           <div className="grid md:grid-cols-3 gap-4 mb-4">
+            {/* Repo selector */}
             <div className="md:col-span-3">
               <label className="block text-sm text-[#888] mb-2">Repository</label>
               {loadingRepos ? (
@@ -145,22 +183,36 @@ export default function DashboardPage() {
                   onChange={(e) => setSelectedRepo(e.target.value)}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-[#f0f0f0] focus:outline-none focus:border-[#7c8cf8]"
                 >
-                  {repos.length === 0 && <option value="">No repos found</option>}
+                  {repos.length === 0 && (
+                    <option value="">No repos found</option>
+                  )}
                   {repos.map((r) => (
-                    <option key={r.id} value={r.full_name}>{r.full_name} {r.private ? "🔒" : ""}</option>
+                    <option key={r.id} value={r.full_name}>
+                      {r.full_name} {r.private ? "🔒" : ""}
+                    </option>
                   ))}
                 </select>
               )}
             </div>
+
+            {/* Date range */}
             <div>
               <label className="block text-sm text-[#888] mb-2">From</label>
-              <input type="date" value={since} onChange={(e) => setSince(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-[#f0f0f0] focus:outline-none focus:border-[#7c8cf8]" />
+              <input
+                type="date"
+                value={since}
+                onChange={(e) => setSince(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-[#f0f0f0] focus:outline-none focus:border-[#7c8cf8]"
+              />
             </div>
             <div>
               <label className="block text-sm text-[#888] mb-2">To</label>
-              <input type="date" value={until} onChange={(e) => setUntil(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-[#f0f0f0] focus:outline-none focus:border-[#7c8cf8]" />
+              <input
+                type="date"
+                value={until}
+                onChange={(e) => setUntil(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-[#f0f0f0] focus:outline-none focus:border-[#7c8cf8]"
+              />
             </div>
             <div className="flex items-end">
               <button
@@ -176,46 +228,75 @@ export default function DashboardPage() {
                     </svg>
                     Generating...
                   </span>
-                ) : "✨ Generate"}
+                ) : (
+                  "✨ Generate"
+                )}
               </button>
             </div>
           </div>
-          <p className="text-xs text-[#555]">Beta — free while in early access</p>
+
+          <p className="text-xs text-[#555]">
+            Beta — free while we&apos;re in early access
+          </p>
         </div>
 
+        {/* Error */}
         {error && (
           <div className="bg-red-950/50 border border-red-800 rounded-xl p-4 mb-6 text-sm">
             <p className="text-red-400">{error}</p>
           </div>
         )}
 
+        {/* Result */}
         {result && (
           <div className="bg-[#111] border border-[#222] rounded-xl overflow-hidden">
+            {/* Stats bar */}
             <div className="flex items-center gap-4 px-6 py-3 bg-[#0d0d0d] border-b border-[#222] text-xs text-[#555]">
-              <span>📝 {result.commits_used} commit{result.commits_used !== 1 ? "s" : ""}</span>
-              <span>🔀 {result.prs_used} PR{result.prs_used !== 1 ? "s" : ""}</span>
+              <span>
+                📝 {result.commits_used} commit{result.commits_used !== 1 ? "s" : ""}
+              </span>
+              <span>
+                🔀 {result.prs_used} PR{result.prs_used !== 1 ? "s" : ""}
+              </span>
               <span className="text-green-600 ml-auto">✓ Generated</span>
             </div>
+
+            {/* Tone tabs */}
             <div className="flex border-b border-[#222]">
               {(["developer", "user", "executive"] as Tone[]).map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-3 text-sm font-medium transition-colors capitalize ${activeTab === tab ? "text-[#7c8cf8] border-b-2 border-[#7c8cf8]" : "text-[#666] hover:text-[#aaa]"}`}>
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-3 text-sm font-medium transition-colors capitalize ${
+                    activeTab === tab
+                      ? "text-[#7c8cf8] border-b-2 border-[#7c8cf8]"
+                      : "text-[#666] hover:text-[#aaa]"
+                  }`}
+                >
                   {tab === "developer" ? "🛠 Developer" : tab === "user" ? "👤 User-Friendly" : "📊 Executive"}
                 </button>
               ))}
             </div>
+
+            {/* Content */}
             <div className="p-6">
               <pre className="whitespace-pre-wrap font-mono text-sm text-[#ccc] leading-relaxed max-h-96 overflow-y-auto">
                 {result[activeTab]}
               </pre>
             </div>
+
+            {/* Actions */}
             <div className="flex gap-3 px-6 py-4 border-t border-[#222] bg-[#0d0d0d]">
-              <button onClick={copyToClipboard}
-                className="flex items-center gap-2 bg-[#1a1a1a] border border-[#333] text-sm px-4 py-2 rounded-lg hover:border-[#555] transition-colors">
+              <button
+                onClick={copyToClipboard}
+                className="flex items-center gap-2 bg-[#1a1a1a] border border-[#333] text-sm px-4 py-2 rounded-lg hover:border-[#555] transition-colors"
+              >
                 {copied ? "✓ Copied!" : "📋 Copy"}
               </button>
-              <button onClick={downloadMarkdown}
-                className="flex items-center gap-2 bg-[#1a1a1a] border border-[#333] text-sm px-4 py-2 rounded-lg hover:border-[#555] transition-colors">
+              <button
+                onClick={downloadMarkdown}
+                className="flex items-center gap-2 bg-[#1a1a1a] border border-[#333] text-sm px-4 py-2 rounded-lg hover:border-[#555] transition-colors"
+              >
                 ⬇ Download .md
               </button>
             </div>

@@ -11,7 +11,13 @@ export interface GitHubRepo {
 
 export interface GitHubCommit {
   sha: string;
-  commit: { message: string; author: { name: string; date: string } };
+  commit: {
+    message: string;
+    author: {
+      name: string;
+      date: string;
+    };
+  };
   html_url: string;
 }
 
@@ -26,39 +32,74 @@ export interface GitHubPR {
 }
 
 export async function getUserRepos(accessToken: string): Promise<GitHubRepo[]> {
-  const res = await fetch(
+  const response = await fetch(
     "https://api.github.com/user/repos?sort=updated&per_page=50&type=owner",
-    { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github.v3+json" } }
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    }
   );
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-  return res.json();
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function getCommitsInRange(
-  accessToken: string, owner: string, repo: string, since: string, until: string
+  accessToken: string,
+  owner: string,
+  repo: string,
+  since: string,
+  until: string
 ): Promise<GitHubCommit[]> {
-  const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/commits?since=${since}&until=${until}&per_page=100`,
-    { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github.v3+json" } }
-  );
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-  return res.json();
+  const url = `https://api.github.com/repos/${owner}/${repo}/commits?since=${since}&until=${until}&per_page=100`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github.v3+json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function getMergedPRsInRange(
-  accessToken: string, owner: string, repo: string, since: string, until: string
+  accessToken: string,
+  owner: string,
+  repo: string,
+  since: string,
+  until: string
 ): Promise<GitHubPR[]> {
-  const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100`,
-    { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/vnd.github.v3+json" } }
-  );
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-  const prs: GitHubPR[] = await res.json();
+  // GitHub doesn't support date filtering on PRs directly, so we fetch and filter
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github.v3+json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status}`);
+  }
+
+  const prs: GitHubPR[] = await response.json();
   const sinceDate = new Date(since);
   const untilDate = new Date(until);
+
   return prs.filter((pr) => {
     if (!pr.merged_at) return false;
-    const d = new Date(pr.merged_at);
-    return d >= sinceDate && d <= untilDate;
+    const mergedDate = new Date(pr.merged_at);
+    return mergedDate >= sinceDate && mergedDate <= untilDate;
   });
 }

@@ -4,10 +4,21 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Proseflow — AI changelog generator",
-  description: "Connect your GitHub repo. Get polished release notes in seconds.",
+  description:
+    "Connect your GitHub repo. Get polished release notes in seconds.",
+  openGraph: {
+    title: "Proseflow — AI changelog generator",
+    description:
+      "Connect your GitHub repo. Get polished release notes in seconds.",
+    type: "website",
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>
