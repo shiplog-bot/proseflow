@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { getCommitsInRange, getMergedPRsInRange } from "@/lib/github";
-import { generateAllTones } from "@/lib/openai";
+import { generateAllTones } from "@/lib/anthropic";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate all 3 tones in ONE OpenAI call (efficient)
+    // Generate all 3 tones in ONE Anthropic call (efficient)
     const changelogs = await generateAllTones({ commits, prs, repo });
 
     return NextResponse.json({
